@@ -15,6 +15,7 @@ public class Cryptography {
     public void encrypt(File fileToEncrypt, int key) {
         try {
             BufferedReader bufferReader = new BufferedReader(new FileReader(fileToEncrypt));
+            
             StringBuilder srBuilder = new StringBuilder();
             String lineReadText;
             while ((lineReadText = bufferReader.readLine()) != null) {
@@ -23,19 +24,26 @@ public class Cryptography {
             }
             String completeMessage = srBuilder.toString();
             srBuilder.setLength(0);
-
+            
+            char encryptedChar;
+            int ecryptedCode;
+            
             for (int i = 0; i < completeMessage.length(); i++) {
-                int encryptedChar = (int) completeMessage.charAt(i);
-                encryptedChar += key;
-                if (encryptedChar > 127) {
-                    encryptedChar = (encryptedChar - 127) - 1;
+                ecryptedCode = (int) completeMessage.charAt(i);
+                ecryptedCode += key;
+                if (ecryptedCode > 127) {
+                    ecryptedCode = (ecryptedCode - 127) - 1;
                 }
+                encryptedChar = (char) ecryptedCode;
                 srBuilder.append(encryptedChar);
-                srBuilder.append(" ");
             }
+            
             String encryptedMessage = srBuilder.toString();
-
             saveEncryptedFile(fileToEncrypt.getName(), encryptedMessage);
+            
+            //closing resources
+            bufferReader.close();
+            
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Cryptography.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
@@ -57,34 +65,42 @@ public class Cryptography {
             String encryptedMessageComplete = stringBuilder.toString();
             stringBuilder.setLength(0);
 
-            String[] asciiCodes = encryptedMessageComplete.trim().split("\\s+");
-            int[] asciiCodesConverted = convertStringCodeToInt(asciiCodes, key);
+            char[] messageChars = encryptedMessageComplete.toCharArray();
+            int[] asciiCodesConverted = convertAsciiCodeByTheKey(messageChars, key);
+            
             for (int code : asciiCodesConverted) {
                 char messageChar = (char) code;
                 stringBuilder.append(messageChar);
             }
+            
             String decryptedMsgComplete = stringBuilder.toString();
             
             saveDescryptFile(fileToDecrypt.getName(), decryptedMsgComplete);
             
+            //closing resources
+            bufferedReader.close();
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Cryptography.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(Cryptography.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        } 
 
     }
 
     public void saveEncryptedFile(String encryptedFileName, String encryptedMessage) {
         FileWriter fileWriter = null;
+        String currentDir = System.getProperty("user.dir");
         try {
-            String encryptedMsgPath = "yourdirectory"
+            String encryptedMsgPath = currentDir + "\\encryptMessages\\"
                     + encryptedFileName;
             fileWriter = new FileWriter(encryptedMsgPath);
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
             bufferedWriter.write(encryptedMessage);
-            bufferedWriter.close();
+            
             System.out.println("File encrypted and saved successfully!\n");
+            
+            //closing resources
+            bufferedWriter.close();
         } catch (IOException ex) {
             Logger.getLogger(Cryptography.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
@@ -97,42 +113,39 @@ public class Cryptography {
     }
     
     public void saveDescryptFile(String descryptedFileName, String descryptedMessage) {
-        FileWriter fileWriter = null;
+        String currentDir = System.getProperty("user.dir");
         try {
-            String descryptedMsgPath = "yourdirectory"
+            String descryptedMsgPath = currentDir + "\\decryptMessages\\"
                     + descryptedFileName;
-            fileWriter = new FileWriter(descryptedMsgPath);
+            FileWriter fileWriter = new FileWriter(descryptedMsgPath);
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
             bufferedWriter.write(descryptedMessage);
-            bufferedWriter.close();
+            
             System.out.println("File decrypted and saved successfully!\n");
+            
+            //closing resources
+            bufferedWriter.close();
+            fileWriter.close();
         } catch (IOException ex) {
             Logger.getLogger(Cryptography.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            try {
-                fileWriter.close();
-            } catch (IOException ex) {
-                Logger.getLogger(Cryptography.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
+        } 
     }
 
-    private int[] convertStringCodeToInt(String[] asciiCodesString, int key) {
-        int[] asciiCodesConverted = new int[asciiCodesString.length];
-        int asciiCode;
-        for (int i = 0; i < asciiCodesString.length; i++) {
-            asciiCode = Integer.valueOf(asciiCodesString[i]) - key;
-            if (asciiCode < 0) {
-                asciiCode = 127 + (asciiCode + 1);
+    private int[] convertAsciiCodeByTheKey(char[] msgCharacters, int key){
+        //pegar o caractere correto
+        int[] asciiCodesConverted = new int[msgCharacters.length];
+        for (int i = 0; i < msgCharacters.length; i++) {
+            int charAsciiCode = (int) msgCharacters[i];
+            int realAscii = charAsciiCode - key;
+            if ( realAscii < 0){
+                realAscii = 127 + (realAscii + 1);
             }
-            asciiCodesConverted[i] = asciiCode;
+            asciiCodesConverted[i] = realAscii;
         }
-
+        
         return asciiCodesConverted;
     }
-
-    public void closeResources() {
-
-    }
+    
+    
 
 }
